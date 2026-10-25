@@ -33,3 +33,6 @@ Desktop.ini
 backend/data/*
 !backend/data/wind_actuals.csv
 !backend/data/wind_forecasts.csv
+
+# Local Vercel project metadata and generated output
+.vercel/

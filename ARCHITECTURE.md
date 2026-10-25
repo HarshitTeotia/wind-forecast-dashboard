@@ -21,6 +21,10 @@ Optional Compose packaging uses exactly two services: `frontend` builds React in
 Compose waits for a backend HTTP health check using Python's standard library before starting the frontend. During startup it probes every second; once healthy it uses the regular ten-second interval. Nginx compresses JS/CSS/JSON, gives fingerprinted assets a one-year immutable cache lifetime, and makes HTML revalidate so new deployments can be discovered. This checks process readiness, not dataset comparability. The two snapshot CSVs are copied into the image under the existing module-relative data path, made read-only, and never regenerated on startup. Builds use service-specific contexts and allowlists in each `.dockerignore`; no root context/ignore file, volumes, or extra services are needed. Operational commands and verification limits are in the README Docker section.
 
 
+Optional Vercel Services packaging uses the same FastAPI app and a static Vite service without Nginx or Compose. The root route table sends `/api/*` to `backend` unchanged and the catch-all to `frontend`. Browser requests use the public same-origin API in Vite mode `vercel`; there are no server-to-server requests and therefore no internal service bindings. Binding URLs belong only in runtime server functions, never in the static browser bundle. Both services are public through their specified rewrites; there are no internal-only services. API documentation routes remain outside the public backend prefix.
+
+The Vercel function bundles the two historical CSVs as read-only runtime input. No filesystem persistence or cross-instance cache coherence is assumed: each function instance populates its own cache lazily, and data updates require redeployment. The existing local Docker hostnames and development CORS origin belong only to those workflows and are not Vercel service-discovery configuration. Operational setup and confirmation requirements are in the README Vercel section.
+
 | Location | Responsibility |
 | --- | --- |
 | `backend/app/elexon.py` | Requests, bounded retries/range splitting, normalization, coverage reports, CSV replacement; owns the January window/data path constants |
@@ -77,7 +81,7 @@ Metrics use only non-missing matched errors. MAE, RMSE, mean bias, over/underfor
 
 `missingDayAheadForecasts` includes absent eligible publications, conflicts, and invalid selected values; separate counters explain these cases. Missing actual values include unusable/conflicting actuals. Forecast and actual missing counts can overlap. These counts describe hourly comparison targets, not full half-hour forecast coverage.
 
-Query validation returns HTTP 422 for invalid hours/delivery dates. Missing or malformed CSVs map to HTTP 503; the health route remains independent of data availability. Current API error details can contain local filesystem paths, another reason to keep this unauthenticated prototype local rather than exposing it unchanged to untrusted users.
+Query validation returns HTTP 422 for invalid hours/delivery dates. Missing or malformed CSVs map to HTTP 503; the health route remains independent of data availability. Current API error details can contain local filesystem paths. The configured Vercel API is public and unauthenticated; review error disclosure and access control before treating the historical demo as a production service.
 
 ## React request and presentation contract
 

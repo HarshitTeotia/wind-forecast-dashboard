@@ -1,0 +1,15 @@
+**/.venv/**
+**/venv/**
+**/env/**
+**/node_modules/**
+**/dist/**
+**/build/**
+**/.npm-cache/**
+**/__pycache__/**
+**/.pytest_cache/**
+**/test-results/**
+**/playwright-report/**
+**/.env
+**/.env.*
+**/*.log
+.git/

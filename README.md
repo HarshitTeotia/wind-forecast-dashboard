@@ -1,6 +1,6 @@
 # Wind Forecast Dashboard
 
-**Wind Intelligence** is a local React + FastAPI dashboard for historical UK day-ahead wind forecast analysis in January 2026. It ingests Elexon data, selects forecasts available at a configurable previous-day cutoff, and displays forecast accuracy and coverage.
+**Wind Intelligence** is a React + FastAPI dashboard for historical UK day-ahead wind forecast analysis in January 2026. It ingests Elexon data, selects forecasts available at a configurable previous-day cutoff, and displays forecast accuracy and coverage.
 
 Features include monthly KPIs, daily forecast/actual and signed-error charts, publication/cutoff tooltips in UK time, and explicit missing-data states. The default delivery date is January 15; the default cutoff is 10:00 Europe/London. That cutoff is an illustrative assumption, not an official market deadline.
 
@@ -33,6 +33,28 @@ After startup, verify these URLs through Nginx, then test chart loading, date/cu
 - `http://localhost:8080/api/comparison?date=2026-01-15&cutoff_hour=10`
 
 Docker Compose configuration, image builds, startup, Nginx forwarding, compression/cache headers, and browser loading through port 8080 were verified during the performance review. Fingerprinted JS/CSS assets are cached for one year; HTML revalidates so it can discover new asset filenames. See the measured results in [ARCHITECTURE.md](ARCHITECTURE.md#performance-review).
+
+## Vercel Services (optional)
+
+The root `vercel.json` configures one Vercel project with `backend` (FastAPI, entrypoint `app.main:app`) and `frontend` (Vite). Import the repository with its Root Directory at the repository root, so Vercel reads both services. This configuration is prepared for review; confirm service names and public routing before deployment.
+
+Public `/api/*` requests go to `backend` with the prefix and query string intact; all other paths go to `frontend`. The existing three API endpoints keep their paths and response shapes. FastAPI's `/docs` and `/openapi.json` are not publicly routed by this configuration. The browser uses the shared origin, so deployment-specific CORS origins are unnecessary for this UI.
+
+There are no service bindings: the static React app calls the public API from the browser, and the backend calls no other deployed service. Runtime binding URLs cannot be embedded into a static Vite build or exposed to the browser. Keeping the backend internal-only would require a server-side caller/proxy and a different routing design; do not add an unused binding or set a binding variable manually. See [Vercel bindings](https://vercel.com/docs/services/bindings) and [routing](https://vercel.com/docs/services/routing).
+
+The frontend service explicitly uses Vite mode `vercel` for build and development. In that mode Axios uses `/`, even if a local frontend `.env` points at localhost. Normal `npm run dev`, Docker builds, and `VITE_API_BASE_URL` configuration outside this mode retain their existing behavior.
+
+Keep both historical CSVs in the deployment. The backend function explicitly includes `data/*.csv` and uses module-relative paths; `backend/.python-version` selects Python 3.12. Ingestion does not run in Vercel. Updating data requires a new deployment, and each warm function instance has its own lazy, bounded analytics cache. Dockerfiles, Compose and Nginx remain a separate local deployment option.
+
+Local service routing and browser checks were verified with Vercel CLI 65.2.0, including both filters and cutoffs 00/10/23. The Vercel-mode build and 39 backend tests passed. A hosted build/deployment has not been run.
+
+With a current Vercel CLI installed, run from the repository root:
+
+```sh
+vercel dev --local
+```
+
+This starts the services locally without cloud authentication; use the URL the CLI prints and verify the same three `/api/` URLs listed above. Stop other local development servers first if their ports conflict. `.vercelignore` excludes local environments, dependencies, secrets and generated artifacts from CLI uploads; `.vercel/` metadata is Git-ignored. No Vercel deployment or cloud project is created by the repository configuration itself.
 
 ## Prerequisites
 
@@ -81,7 +103,7 @@ npm ci
 | `frontend/.env` | `VITE_API_BASE_URL` | `http://localhost:8000` |
 | `backend/.env` | `FRONTEND_ORIGIN` | `http://localhost:5173` |
 
-The backend explicitly loads `backend/.env`; process variables take precedence. Vite loads frontend environment configuration. Restart servers after changing configuration; production frontend values require a rebuild. `VITE_` values are public browser configuration, never secrets. Local `.env` files are ignored by Git; examples are retained. CORS allows the configured exact origin (scheme, hostname, port); it is not authentication. This project is intended for local use.
+The backend explicitly loads `backend/.env`; process variables take precedence. Vite loads frontend environment configuration. Restart servers after changing configuration; production frontend values require a rebuild. `VITE_` values are public browser configuration, never secrets. Local `.env` files are ignored by Git; examples are retained. CORS allows the configured exact origin (scheme, hostname, port); it is not authentication. The historical demo API has no authentication; its configured Vercel /api prefix is public. Current HTTP 503 details can include local paths, which should be reviewed before production use.
 
 ## Obtain the historical CSVs
 
