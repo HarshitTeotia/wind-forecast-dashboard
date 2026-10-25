@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!requirements.txt
+!app/
+!app/*.py
+!data/
+!data/wind_actuals.csv
+!data/wind_forecasts.csv

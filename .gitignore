@@ -1,0 +1,35 @@
+# Python environments and generated files
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Dependencies, builds, logs and browser-test artifacts
+node_modules/
+.npm-cache/
+dist/
+build/
+logs/
+*.log
+playwright-report/
+test-results/
+
+# Local environment settings; retain the safe setup templates
+.env
+.env.*
+!.env.example
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Docker requires these two reproducible historical snapshots
+backend/data/*
+!backend/data/wind_actuals.csv
+!backend/data/wind_forecasts.csv
